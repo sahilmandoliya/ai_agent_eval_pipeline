@@ -1,201 +1,150 @@
-# 🧠 AI Agent Evaluation Pipeline
+# AI Agent Evaluation Pipeline
 
-A modular, extensible backend system for ingesting AI agent conversations and automatically evaluating them using a combination of deterministic rules and LLM-based judgments.
+This project provides a backend service to ingest AI agent conversations and evaluate them across multiple quality dimensions such as correctness, clarity, tool usage, and coherence.  
+The goal is to make agent behavior observable, debuggable, and measurable in a structured way.
 
-This service supports:
-- Conversation ingestion
-- Multi-metric evaluation (helpfulness, correctness, clarity, coherence, tool accuracy)
-- Human feedback calibration
-- Regression detection and disagreement analysis
-- Explainable scoring and improvement suggestions
-
-🔗 **Live Demo:**  
+Live demo:  
 https://ai-agent-eval-pipeline.onrender.com/docs
 
 ---
 
-## 🚀 Architecture Overview
+## Overview
+
+The system accepts conversation logs, runs multiple evaluators over them, aggregates the results, and produces a structured evaluation report along with actionable suggestions.
+
+It is designed to be:
+- Modular (new evaluators can be added easily)
+- Deterministic where possible, probabilistic where needed
+- Explainable (scores are accompanied by reasoning)
+- Production-oriented (clear APIs, persistence, observability)
+
+---
+
+## High-Level Architecture
 
 ```
 Client / Agent Logs
         ↓
-   FastAPI API Layer
+     API Layer (FastAPI)
         ↓
- Persistence (SQLite / ORM)
+     Persistence Layer
         ↓
- Evaluation Service
-        ├── LLM Judge
-        ├── Tool Evaluator
-        ├── Coherence Evaluator
+     Evaluation Engine
+        ├─ LLM-based evaluator
+        ├─ Tool usage evaluator
+        ├─ Coherence evaluator
         ↓
- Suggestion Engine
+     Aggregation + Calibration
         ↓
- Meta Evaluation & Aggregation
-        ↓
-     Final Report
+     Final Evaluation Output
 ```
-
-### Flow
-
-1. Client sends a conversation log.
-2. The system persists the data.
-3. Evaluators run independently.
-4. Scores are aggregated and calibrated.
-5. Suggestions are generated.
-6. Disagreement and regression are computed.
 
 ---
 
-## 🧩 Core Concepts
+## Core Components
 
-### Conversation Ingestion
+### Ingestion
 
-Stores structured conversations including turns, tool calls, metadata, and feedback.
+Stores structured conversations including:
+- Turns (user / assistant / tool)
+- Tool calls and parameters
+- Metadata and optional feedback
 
 ### Evaluators
 
-| Evaluator | Purpose |
-|----------|----------|
-| LLM Judge | Scores semantic quality (helpfulness, correctness, clarity) |
-| Tool Evaluator | Verifies correct tool usage and parameter integrity |
-| Coherence Evaluator | Ensures conversational flow and logical consistency |
+| Evaluator | Responsibility |
+|----------|----------------|
+| LLM Judge | Semantic quality (helpfulness, clarity, correctness) |
+| Tool Evaluator | Tool usage correctness and schema adherence |
+| Coherence Evaluator | Logical and conversational consistency |
 
-### Hybrid Evaluation
+### Aggregation
 
-We combine:
-- **Deterministic checks** (schema, tool usage, coherence)
-- **Probabilistic judgments** (LLM-based scoring)
-
-This improves:
-- Reliability
-- Explainability
-- Debuggability
-- Trustworthiness
+Scores are normalized and combined into an overall score.  
+Human feedback (if present) is used to calibrate automated judgments.
 
 ---
 
-## 🔧 API Endpoints
+## API
 
-### 1️⃣ Ingest Conversation
+- `POST /conversations/` — Ingest conversation
+- `POST /evaluations/run/{conversation_id}` — Run evaluation
+- `GET /evaluations/{evaluation_id}` — Fetch evaluation
 
-`POST /conversations/`
+Swagger UI is available at `/docs`.
+
+---
+
+## Example Scenarios
+
+### Regression detection
+
+If a tool call changes from:
 
 ```json
-{
-  "conversation_id": "conv_test_1",
-  "agent_version": "v1.0",
-  "turns": [...],
-  "feedback": {...},
-  "metadata": {...}
-}
+"parameters": { "destination": "NYC" }
 ```
 
----
-
-### 2️⃣ Run Evaluation
-
-`POST /evaluations/run/{conversation_id}`
-
-Returns:
-
-```json
-{
-  "evaluation_id": "...",
-  "scores": {...},
-  "suggestions": [...],
-  "disagreement": 0.2
-}
-```
-
----
-
-### 3️⃣ Get Evaluation
-
-`GET /evaluations/{evaluation_id}`
-
----
-
-## 🧪 Example Tests
-
-### Regression Test
-
-Change tool params:
+to:
 
 ```json
 "parameters": { "dest": "NYC" }
 ```
 
-Expected:
-- `tool_accuracy` drops
-- suggestion generated
+the tool evaluator flags it and reduces tool accuracy.
+
+### Disagreement detection
+
+If the automated score is high but user feedback is very low, the system surfaces disagreement for review.
 
 ---
 
-### Disagreement Test
+## Configuration
 
-Set:
-
-```json
-"user_rating": 1
-```
-
-Expected:
-- disagreement score increases
-
----
-
-## ⚙️ Configuration
-
-Environment variables:
-
-| Variable | Purpose |
-|----------|----------|
-| OPENAI_API_KEY | Enables LLM judging |
-| USE_OPENAI | Toggle OpenAI usage |
-| DATABASE_URL | Override DB |
+| Variable | Description |
+|----------|-------------|
+| OPENAI_API_KEY | Enables LLM-based evaluation |
+| USE_OPENAI | Toggle LLM usage |
+| DATABASE_URL | Override persistence layer |
 | LOG_LEVEL | Logging verbosity |
 
 ---
 
-## 🐳 Running Locally with Docker
+## Running locally
 
 ```bash
 docker build -t ai-eval .
 docker run -p 8000:8000 ai-eval
 ```
 
-Then open:
-
-http://localhost:8000/docs
+Then open http://localhost:8000/docs.
 
 ---
 
-## 🧠 Design Principles
+## Design Notes
 
-- Modular evaluator system  
-- Explainable scoring  
-- Deterministic + probabilistic hybrid model  
-- Easy to extend with new evaluators  
-- Production-ready observability  
+- Deterministic evaluators are preferred where possible (tool usage, coherence).
+- LLMs are used only where semantic judgment is required.
+- All outputs are structured and inspectable.
+- The system favors debuggability over black-box scoring.
 
 ---
 
-## 📦 Tech Stack
+## Tech Stack
 
 - FastAPI
 - SQLAlchemy
 - Pydantic
-- OpenAI API (optional)
 - SQLite (pluggable)
 - Docker
 - Render
 
 ---
 
-## 🧭 Future Improvements
+## Possible Extensions
 
-- Regression trend analysis
+- Longitudinal regression tracking
 - Golden dataset comparison
-- Alerting on metric drift
+- Alerting on score degradation
 - Prompt evolution tracking
-- Multi-agent evaluation
+- Multi-agent analysis
