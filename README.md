@@ -16,23 +16,24 @@ https://ai-agent-eval-pipeline.onrender.com/docs
 
 ## 🚀 Architecture Overview
 
+```
 Client / Agent Logs
-    ↓
-FastAPI API Layer
-    ↓
-Persistence (SQLite / ORM)
-    ↓
-Evaluation Service
-    ├── LLM Judge
-    ├── Tool Evaluator
-    ├── Coherence Evaluator
-    ↓
-Suggestion Engine
-    ↓
-Meta Evaluation & Aggregation
-    ↓
-Final Report
-
+        ↓
+   FastAPI API Layer
+        ↓
+ Persistence (SQLite / ORM)
+        ↓
+ Evaluation Service
+        ├── LLM Judge
+        ├── Tool Evaluator
+        ├── Coherence Evaluator
+        ↓
+ Suggestion Engine
+        ↓
+ Meta Evaluation & Aggregation
+        ↓
+     Final Report
+```
 
 ### Flow
 
@@ -48,6 +49,7 @@ Final Report
 ## 🧩 Core Concepts
 
 ### Conversation Ingestion
+
 Stores structured conversations including turns, tool calls, metadata, and feedback.
 
 ### Evaluators
@@ -86,104 +88,114 @@ This improves:
   "feedback": {...},
   "metadata": {...}
 }
+```
 
-2️⃣ Run Evaluation
+---
 
-POST /evaluations/run/{conversation_id}
+### 2️⃣ Run Evaluation
+
+`POST /evaluations/run/{conversation_id}`
 
 Returns:
 
+```json
 {
   "evaluation_id": "...",
   "scores": {...},
   "suggestions": [...],
   "disagreement": 0.2
 }
+```
 
-3️⃣ Get Evaluation
+---
 
-GET /evaluations/{evaluation_id}
+### 3️⃣ Get Evaluation
 
-🧪 Example Tests
-Regression Test
+`GET /evaluations/{evaluation_id}`
+
+---
+
+## 🧪 Example Tests
+
+### Regression Test
 
 Change tool params:
 
+```json
 "parameters": { "dest": "NYC" }
-
+```
 
 Expected:
+- `tool_accuracy` drops
+- suggestion generated
 
-tool_accuracy drops
+---
 
-suggestion generated
-
-Disagreement Test
+### Disagreement Test
 
 Set:
 
+```json
 "user_rating": 1
-
+```
 
 Expected:
+- disagreement score increases
 
-disagreement score increases
+---
 
-⚙️ Configuration
+## ⚙️ Configuration
 
 Environment variables:
 
-Variable	Purpose
-OPENAI_API_KEY	Enables LLM judging
-USE_OPENAI	Toggle OpenAI usage
-DATABASE_URL	Override DB
-LOG_LEVEL	Logging verbosity
-🐳 Running Locally with Docker
+| Variable | Purpose |
+|----------|----------|
+| OPENAI_API_KEY | Enables LLM judging |
+| USE_OPENAI | Toggle OpenAI usage |
+| DATABASE_URL | Override DB |
+| LOG_LEVEL | Logging verbosity |
+
+---
+
+## 🐳 Running Locally with Docker
+
+```bash
 docker build -t ai-eval .
 docker run -p 8000:8000 ai-eval
-
+```
 
 Then open:
 
 http://localhost:8000/docs
 
-🧠 Design Principles
+---
 
-Modular evaluator system
+## 🧠 Design Principles
 
-Explainable scoring
+- Modular evaluator system  
+- Explainable scoring  
+- Deterministic + probabilistic hybrid model  
+- Easy to extend with new evaluators  
+- Production-ready observability  
 
-Deterministic + probabilistic hybrid model
+---
 
-Easy to extend with new evaluators
+## 📦 Tech Stack
 
-Production-ready observability
+- FastAPI
+- SQLAlchemy
+- Pydantic
+- OpenAI API (optional)
+- SQLite (pluggable)
+- Docker
+- Render
 
-📦 Tech Stack
+---
 
-FastAPI
+## 🧭 Future Improvements
 
-SQLAlchemy
-
-Pydantic
-
-OpenAI API (optional)
-
-SQLite (pluggable)
-
-Docker
-
-Render
-
-🧭 Future Improvements
-
-Regression trend analysis
-
-Golden dataset comparison
-
-Alerting on metric drift
-
-Prompt evolution tracking
-
-Multi-agent evaluation
-
+- Regression trend analysis
+- Golden dataset comparison
+- Alerting on metric drift
+- Prompt evolution tracking
+- Multi-agent evaluation
