@@ -31,3 +31,12 @@ class ConversationCreate(BaseModel):
     turns: List[Turn]
     feedback: Optional[Feedback] = None
     metadata: Optional[Metadata] = None
+
+class EvaluationResult(BaseModel):
+    conversation_id: str
+    scores: Dict[str, float]
+    suggestions: List[Dict]
+    disagreement: Optional[float] = None
+
+    class Config:
+        extra = "allow"
